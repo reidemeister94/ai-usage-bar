@@ -83,7 +83,3 @@ make help            # Show all targets
 - macOS 14.0+ (Sonoma)
 - Apple Silicon (arm64)
 - Swift 6.0+
-
-## Development Skills
-
-CRITICAL: USE ALWAYS THE PLUGIN "development-skills" FOR EVERY TASK ON THIS PROJECT (BRAINSTORMING, DEVELOPMENT, BUG FIXING, NEW FEATURE, ...) IF THE PLUGIN IS NOT AVAILABLE ON THE USER SYSTEM, NOTICE IT
