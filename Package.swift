@@ -14,6 +14,11 @@ let package = Package(
             linkerSettings: [
                 .linkedLibrary("sqlite3"),
             ]
-        )
+        ),
+        .testTarget(
+            name: "AIUsageBarTests",
+            dependencies: ["AIUsageBar"],
+            path: "Tests/AIUsageBarTests"
+        ),
     ]
 )

@@ -22,6 +22,12 @@ cp "${BUILD_DIR}/${APP_NAME}" "${APP_BUNDLE}/Contents/MacOS/"
 # Copy Info.plist
 cp "${PROJECT_DIR}/Resources/Info.plist" "${APP_BUNDLE}/Contents/"
 
+# Copy app icon
+if [ -f "${PROJECT_DIR}/Resources/AppIcon.icns" ]; then
+    cp "${PROJECT_DIR}/Resources/AppIcon.icns" "${APP_BUNDLE}/Contents/Resources/"
+    echo "App icon bundled."
+fi
+
 # Ad-hoc code sign
 SIGNING="${CODEXBAR_SIGNING:-adhoc}"
 if [ "$SIGNING" = "adhoc" ]; then
