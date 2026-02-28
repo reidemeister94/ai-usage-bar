@@ -22,6 +22,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Homebrew cask formula for distribution
 - App bundle packaging script with ad-hoc code signing
 
+## v1.1.1 (2026-02-28)
+
+### Fix
+
+- improvements
+
 ## v1.1.0 (2026-02-28)
 
 ### Feat
