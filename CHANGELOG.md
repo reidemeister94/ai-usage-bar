@@ -5,9 +5,6 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
-
-## [1.0.0] - 2026-02-28
 
 ### Added
 - Menu bar icon with session (5-hour) and weekly (7-day) usage bars
@@ -24,3 +21,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Auto-refresh with configurable polling
 - Homebrew cask formula for distribution
 - App bundle packaging script with ad-hoc code signing
+
+## v1.1.0 (2026-02-28)
+
+### Feat
+
+- improvements
+
+## v1.0.0 (2026-02-28)
+
+### Feat
+
+- improvements
+- codebase
+
+### Fix
+
+- minor fixes
+- minor improvements
+- use xcode 16
+- minor fixes
+- minor fixes
