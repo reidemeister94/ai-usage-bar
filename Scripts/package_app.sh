@@ -4,6 +4,7 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 PROJECT_DIR="$(dirname "$SCRIPT_DIR")"
 APP_NAME="AIUsageBar"
+BIN_NAME="ai-usage-bar"
 APP_BUNDLE="${PROJECT_DIR}/${APP_NAME}.app"
 BUILD_DIR="${PROJECT_DIR}/.build/release"
 
@@ -16,8 +17,8 @@ rm -rf "$APP_BUNDLE"
 mkdir -p "${APP_BUNDLE}/Contents/MacOS"
 mkdir -p "${APP_BUNDLE}/Contents/Resources"
 
-# Copy binary
-cp "${BUILD_DIR}/${APP_NAME}" "${APP_BUNDLE}/Contents/MacOS/"
+# Copy binary (renamed to match app bundle convention)
+cp "${BUILD_DIR}/${BIN_NAME}" "${APP_BUNDLE}/Contents/MacOS/${APP_NAME}"
 
 # Copy Info.plist
 cp "${PROJECT_DIR}/Resources/Info.plist" "${APP_BUNDLE}/Contents/"

@@ -5,7 +5,7 @@ let package = Package(
     name: "AIUsageBar",
     platforms: [.macOS(.v14)],
     products: [
-        .executable(name: "AIUsageBar", targets: ["AIUsageBar"])
+        .executable(name: "ai-usage-bar", targets: ["AIUsageBar"])
     ],
     targets: [
         .executableTarget(

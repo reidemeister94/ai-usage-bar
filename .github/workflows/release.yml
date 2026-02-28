@@ -23,15 +23,21 @@ jobs:
           key: ${{ runner.os }}-spm-${{ hashFiles('Package.swift') }}
           restore-keys: ${{ runner.os }}-spm-
 
+      - name: Build release binary
+        run: swift build -c release
+
+      - name: Prepare binary
+        run: cp .build/release/ai-usage-bar ai-usage-bar
+
       - name: Build app bundle
         run: ./Scripts/package_app.sh
 
-      - name: Create zip
+      - name: Create app zip
         run: zip -r AIUsageBar.app.zip AIUsageBar.app
 
-      - name: Compute SHA256
+      - name: Compute SHA256 of binary
         id: sha
-        run: echo "sha256=$(shasum -a 256 AIUsageBar.app.zip | awk '{print $1}')" >> "$GITHUB_OUTPUT"
+        run: echo "sha256=$(shasum -a 256 ai-usage-bar | awk '{print $1}')" >> "$GITHUB_OUTPUT"
 
       - name: Extract version from tag
         id: version
@@ -40,7 +46,9 @@ jobs:
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          files: AIUsageBar.app.zip
+          files: |
+            ai-usage-bar
+            AIUsageBar.app.zip
           generate_release_notes: true
 
       - name: Update Homebrew tap
@@ -48,30 +56,28 @@ jobs:
           TAP_GITHUB_TOKEN: ${{ secrets.TAP_GITHUB_TOKEN }}
         run: |
           git clone https://x-access-token:${TAP_GITHUB_TOKEN}@github.com/reidemeister94/homebrew-tap.git tap-repo
-          mkdir -p tap-repo/Casks
+          mkdir -p tap-repo/Formula
 
-          cat > tap-repo/Casks/ai-usage-bar.rb << FORMULA
-          cask "ai-usage-bar" do
-            version "${{ steps.version.outputs.version }}"
-            sha256 "${{ steps.sha.outputs.sha256 }}"
-
-            url "https://github.com/reidemeister94/ai-usage-bar/releases/download/v#{version}/AIUsageBar.app.zip"
-            name "AI Usage Bar"
+          cat > tap-repo/Formula/ai-usage-bar.rb << 'FORMULA'
+          class AiUsageBar < Formula
             desc "macOS menu bar app for tracking Claude AI usage"
             homepage "https://github.com/reidemeister94/ai-usage-bar"
+            url "https://github.com/reidemeister94/ai-usage-bar/releases/download/v${{ steps.version.outputs.version }}/ai-usage-bar"
+            sha256 "${{ steps.sha.outputs.sha256 }}"
+            license "MIT"
 
-            app "AIUsageBar.app"
+            depends_on macos: :sonoma
+            depends_on arch: :arm64
 
-            zap trash: [
-              "~/Library/Preferences/com.ai-usage-bar.app.plist",
-              "~/Library/Application Support/AIUsageBar",
-            ]
+            def install
+              bin.install "ai-usage-bar"
+            end
           end
           FORMULA
 
           cd tap-repo
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add Casks/ai-usage-bar.rb
+          git add Formula/ai-usage-bar.rb
           git commit -m "Update ai-usage-bar to ${{ steps.version.outputs.version }}"
           git push

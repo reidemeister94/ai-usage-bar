@@ -18,10 +18,9 @@ Thanks for your interest in contributing! Here's how to get started.
    ```bash
    make build
    ```
-5. **Run the app bundle:**
+5. **Run the app:**
    ```bash
-   make app-bundle
-   open AIUsageBar.app
+   .build/debug/ai-usage-bar
    ```
 
 ## Code Style

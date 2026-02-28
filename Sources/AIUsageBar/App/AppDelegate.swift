@@ -8,6 +8,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     let appState = AppState()
 
     func applicationDidFinishLaunching(_: Notification) {
+        NSApplication.shared.setActivationPolicy(.accessory)
+
         statusItem = NSStatusBar.system.statusItem(withLength: 24)
 
         if let button = statusItem.button {

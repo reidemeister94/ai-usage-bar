@@ -59,22 +59,25 @@ Click the icon to see detailed stats:
 ### Install via Homebrew
 
 ```bash
-brew tap reidemeister94/tap
-brew install --cask ai-usage-bar
+brew install reidemeister94/tap/ai-usage-bar
 ```
+
+Then launch from the terminal:
+
+```bash
+ai-usage-bar
+```
+
+The app runs in the menu bar -- there is no Dock icon. To quit, click the menu bar icon and use the Quit button.
 
 ### Or build from source
 
 ```bash
 git clone https://github.com/reidemeister94/ai-usage-bar.git
 cd ai-usage-bar
-./Scripts/package_app.sh
-
-# Copy to Applications
-cp -r AIUsageBar.app /Applications/
+swift build -c release
+.build/release/ai-usage-bar
 ```
-
-> **First launch (build from source):** Right-click the app > Open (to bypass Gatekeeper for unsigned apps).
 
 ### Authentication
 

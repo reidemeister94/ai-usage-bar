@@ -1,18 +1,16 @@
 # Reference copy -- the live formula is auto-managed by the release workflow
-# in the reidemeister94/homebrew-tap repository (Casks/ai-usage-bar.rb).
-cask "ai-usage-bar" do
-  version "1.0.0"
-  sha256 "REPLACED_BY_RELEASE_WORKFLOW"
-
-  url "https://github.com/reidemeister94/ai-usage-bar/releases/download/v#{version}/AIUsageBar.app.zip"
-  name "AI Usage Bar"
+# in the reidemeister94/homebrew-tap repository (Formula/ai-usage-bar.rb).
+class AiUsageBar < Formula
   desc "macOS menu bar app for tracking Claude AI usage"
   homepage "https://github.com/reidemeister94/ai-usage-bar"
+  url "https://github.com/reidemeister94/ai-usage-bar/releases/download/v1.1.0/ai-usage-bar"
+  sha256 "REPLACED_BY_RELEASE_WORKFLOW"
+  license "MIT"
 
-  app "AIUsageBar.app"
+  depends_on macos: :sonoma
+  depends_on arch: :arm64
 
-  zap trash: [
-    "~/Library/Preferences/com.ai-usage-bar.app.plist",
-    "~/Library/Application Support/AIUsageBar",
-  ]
+  def install
+    bin.install "ai-usage-bar"
+  end
 end
