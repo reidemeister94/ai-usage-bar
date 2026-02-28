@@ -59,10 +59,13 @@ struct UsagePanelView: View {
                 ProgressView()
                     .controlSize(.small)
             }
-            Button(action: { Task { await state.refresh() } }) {
-                Image(systemName: "arrow.clockwise")
-                    .font(.system(size: 12))
-            }
+            Button(
+                action: { Task { await state.refresh() } },
+                label: {
+                    Image(systemName: "arrow.clockwise")
+                        .font(.system(size: 12))
+                }
+            )
             .buttonStyle(.borderless)
             .disabled(state.isRefreshing)
         }

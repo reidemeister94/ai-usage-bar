@@ -14,13 +14,22 @@ struct PlanInfo: Sendable, Equatable {
         case unknown = "Unknown"
 
         init(fromRateLimitTier tier: String?) {
-            guard let tier = tier?.lowercased() else { self = .unknown; return }
-            if tier.contains("enterprise") { self = .enterprise }
-            else if tier.contains("team") { self = .team }
-            else if tier.contains("max") { self = .max }
-            else if tier.contains("pro") { self = .pro }
-            else if tier.contains("free") { self = .free }
-            else { self = .unknown }
+            guard let tier = tier?.lowercased() else { self = .unknown
+                return
+            }
+            if tier.contains("enterprise") {
+                self = .enterprise
+            } else if tier.contains("team") {
+                self = .team
+            } else if tier.contains("max") {
+                self = .max
+            } else if tier.contains("pro") {
+                self = .pro
+            } else if tier.contains("free") {
+                self = .free
+            } else {
+                self = .unknown
+            }
         }
     }
 }

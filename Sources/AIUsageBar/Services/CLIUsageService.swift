@@ -42,7 +42,8 @@ struct CLIUsageService: UsageService {
 
         // Try JSON parsing first
         if let jsonData = clean.data(using: .utf8),
-           let json = try? JSONSerialization.jsonObject(with: jsonData) as? [String: Any] {
+           let json = try? JSONSerialization.jsonObject(with: jsonData) as? [String: Any]
+        {
             return try parseJSON(json)
         }
 
@@ -93,6 +94,30 @@ struct CLIUsageService: UsageService {
         )
     }
 
+    private func parsePercentage(from line: String) -> Double? {
+        let lower = line.lowercased()
+        guard let match = lower.range(of: "(\\d+\\.?\\d*)\\s*%", options: .regularExpression) else { return nil }
+        let numStr = String(lower[match]).replacingOccurrences(of: "%", with: "").trimmingCharacters(in: .whitespaces)
+        guard let num = Double(numStr) else { return nil }
+        let isRemaining = lower.contains("remaining") || lower.contains("left")
+        return isRemaining ? (100 - num) / 100.0 : num / 100.0
+    }
+
+    private func parseResetDate(from line: String) -> Date? {
+        let lower = line.lowercased()
+        guard lower.contains("reset") else { return nil }
+        var totalSeconds: TimeInterval = 0
+        if let hMatch = lower.range(of: "(\\d+)\\s*h", options: .regularExpression) {
+            let h = Double(String(lower[hMatch]).filter(\.isNumber)) ?? 0
+            totalSeconds += h * 3600
+        }
+        if let mMatch = lower.range(of: "(\\d+)\\s*m", options: .regularExpression) {
+            let m = Double(String(lower[mMatch]).filter(\.isNumber)) ?? 0
+            totalSeconds += m * 60
+        }
+        return totalSeconds > 0 ? Date().addingTimeInterval(totalSeconds) : nil
+    }
+
     private func parseSection(_ text: String, keywords: [String]) -> UsageWindow {
         let lines = text.components(separatedBy: .newlines)
         var foundSection = false
@@ -108,36 +133,15 @@ struct CLIUsageService: UsageService {
 
             guard foundSection else { continue }
 
-            // Look for percentage patterns
             if percentUsed == nil {
-                if let match = lower.range(of: "(\\d+\\.?\\d*)\\s*%", options: .regularExpression) {
-                    let numStr = String(lower[match]).replacingOccurrences(of: "%", with: "").trimmingCharacters(in: .whitespaces)
-                    if let num = Double(numStr) {
-                        percentUsed = lower.contains("remaining") || lower.contains("left")
-                            ? (100 - num) / 100.0
-                            : num / 100.0
-                    }
-                }
+                percentUsed = parsePercentage(from: line)
             }
 
-            // Look for reset time patterns like "Xh Ym" or "X hours"
-            if resetDate == nil, lower.contains("reset") {
-                var totalSeconds: TimeInterval = 0
-                if let hMatch = lower.range(of: "(\\d+)\\s*h", options: .regularExpression) {
-                    let h = Double(String(lower[hMatch]).filter(\.isNumber)) ?? 0
-                    totalSeconds += h * 3600
-                }
-                if let mMatch = lower.range(of: "(\\d+)\\s*m", options: .regularExpression) {
-                    let m = Double(String(lower[mMatch]).filter(\.isNumber)) ?? 0
-                    totalSeconds += m * 60
-                }
-                if totalSeconds > 0 {
-                    resetDate = Date().addingTimeInterval(totalSeconds)
-                }
+            if resetDate == nil {
+                resetDate = parseResetDate(from: line)
             }
 
-            // Stop at next section
-            if foundSection, percentUsed != nil, line.trimmingCharacters(in: .whitespaces).isEmpty {
+            if percentUsed != nil, line.trimmingCharacters(in: .whitespaces).isEmpty {
                 break
             }
         }

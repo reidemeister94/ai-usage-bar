@@ -1,6 +1,6 @@
 import Foundation
-import SQLite3
 import Security
+import SQLite3
 
 // CommonCrypto constants
 private let kCCSuccess: Int32 = 0
@@ -13,6 +13,7 @@ private let kCCPBKDF2: UInt32 = 2
 private let kCCPRFHmacAlgSHA1: UInt32 = 1
 
 // CommonCrypto function bridges
+// swiftlint:disable function_parameter_count
 @_silgen_name("CCKeyDerivationPBKDF")
 private func _CCKeyDerivationPBKDF(
     _ algorithm: UInt32,
@@ -40,16 +41,17 @@ private func _CCCrypt(
     _ dataOutAvailable: Int,
     _ dataOutMoved: UnsafeMutablePointer<Int>
 ) -> Int32
+// swiftlint:enable function_parameter_count
 
 enum CookieExtractor {
     static func extractSessionKey(source: CookieSource = .automatic) -> String? {
         switch source {
         case .automatic:
-            return extractFromChrome() ?? extractFromSafari()
+            extractFromChrome() ?? extractFromSafari()
         case .chrome:
-            return extractFromChrome()
+            extractFromChrome()
         case .safari:
-            return extractFromSafari()
+            extractFromSafari()
         }
     }
 
@@ -94,7 +96,7 @@ enum CookieExtractor {
 
     private static func decryptChromeCookie(_ data: Data) -> String? {
         guard data.count > 3 else { return nil }
-        let prefix = String(data: data[0..<3], encoding: .utf8)
+        let prefix = String(data: data[0 ..< 3], encoding: .utf8)
         guard prefix == "v10" else { return nil }
 
         guard let key = getChromeEncryptionKey() else { return nil }
@@ -201,7 +203,7 @@ enum CookieExtractor {
         guard let data = try? Data(contentsOf: URL(fileURLWithPath: path)) else { return nil }
         guard data.count > 4 else { return nil }
 
-        let magic = String(data: data[0..<4], encoding: .ascii)
+        let magic = String(data: data[0 ..< 4], encoding: .ascii)
         guard magic == "cook" else { return nil }
 
         // Search for sk-ant-sid pattern in raw binary data
