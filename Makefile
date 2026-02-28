@@ -1,5 +1,5 @@
 .PHONY: clean setup-dev-env install-tools build build-release test lint lint-fix format app-bundle \
-       fetch-tags changelog bump bump-version-minor bump-version-major bump-version-patch push-tag help
+       fetch-tags changelog bump bump-version-minor bump-version-major bump-version-patch push-tag release help
 
 VERSION := $(shell cat VERSION 2>/dev/null || echo "0.0.0")
 
@@ -24,6 +24,7 @@ help:
 	@echo "  format         Run SwiftFormat (auto-fix)"
 	@echo "  app-bundle     Build signed .app bundle"
 	@echo "  bump           Bump version (auto-detect)"
+	@echo "  release        Bump version + push tag (triggers release workflow)"
 	@echo "  changelog      Generate changelog"
 
 # ─── Dev Environment ─────────────────────────────────────────────────
@@ -91,4 +92,8 @@ bump-version-patch: fetch-tags
 	cz bump --increment PATCH
 
 push-tag: fetch-tags
+	git push --follow-tags origin main
+
+release: fetch-tags
+	cz bump --yes
 	git push --follow-tags origin main

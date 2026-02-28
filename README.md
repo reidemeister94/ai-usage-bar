@@ -59,6 +59,7 @@ Click the icon to see detailed stats:
 ### Install via Homebrew
 
 ```bash
+brew tap reidemeister94/tap
 brew install --cask ai-usage-bar
 ```
 
@@ -73,7 +74,7 @@ cd ai-usage-bar
 cp -r AIUsageBar.app /Applications/
 ```
 
-> **First launch:** Right-click the app > Open (to bypass Gatekeeper for unsigned apps).
+> **First launch (build from source):** Right-click the app > Open (to bypass Gatekeeper for unsigned apps).
 
 ### Authentication
 
