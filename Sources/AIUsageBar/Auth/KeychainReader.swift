@@ -11,20 +11,41 @@ struct OAuthToken: Sendable {
     let email: String?
     let rateLimitTier: String?
 
-    var hasProfileScope: Bool { scopes.contains("user:profile") }
+    var hasProfileScope: Bool {
+        scopes.contains("user:profile")
+    }
 }
 
 enum KeychainReader {
+    private nonisolated(unsafe) static var cachedToken: OAuthToken?
+    private nonisolated(unsafe) static var cacheTimestamp: Date?
+    private static let cacheTTL: TimeInterval = 60
+
     static func readClaudeCredentials() throws -> OAuthToken {
+        if let cached = cachedToken, let ts = cacheTimestamp,
+           Date().timeIntervalSince(ts) < cacheTTL
+        {
+            return cached
+        }
+
         // Try Keychain first ("Claude Code-credentials")
         if let token = try? readFromKeychain() {
+            cachedToken = token
+            cacheTimestamp = Date()
             return token
         }
         // Fallback to credentials file
         if let token = try? readFromFile() {
+            cachedToken = token
+            cacheTimestamp = Date()
             return token
         }
         throw UsageError.keychainReadFailed(-1)
+    }
+
+    static func invalidateCache() {
+        cachedToken = nil
+        cacheTimestamp = nil
     }
 
     private static func readFromKeychain() throws -> OAuthToken {
@@ -75,13 +96,12 @@ enum KeychainReader {
         }
 
         // Scopes can be an array of strings or a space-separated string
-        let scopes: Set<String>
-        if let arr = dict["scopes"] as? [String] {
-            scopes = Set(arr)
+        let scopes: Set<String> = if let arr = dict["scopes"] as? [String] {
+            Set(arr)
         } else if let str = dict["scope"] as? String {
-            scopes = Set(str.split(separator: " ").map(String.init))
+            Set(str.split(separator: " ").map(String.init))
         } else {
-            scopes = []
+            []
         }
 
         let refreshToken = (dict["refreshToken"] as? String) ?? (dict["refresh_token"] as? String)

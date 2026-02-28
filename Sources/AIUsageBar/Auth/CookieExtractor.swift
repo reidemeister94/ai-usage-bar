@@ -44,6 +44,10 @@ private func _CCCrypt(
 // swiftlint:enable function_parameter_count
 
 enum CookieExtractor {
+    private nonisolated(unsafe) static var cachedChromeKey: String?
+    private nonisolated(unsafe) static var chromeKeyCacheTimestamp: Date?
+    private static let chromeKeyCacheTTL: TimeInterval = 300
+
     static func extractSessionKey(source: CookieSource = .automatic) -> String? {
         switch source {
         case .automatic:
@@ -117,6 +121,12 @@ enum CookieExtractor {
     }
 
     private static func getChromeEncryptionKey() -> String? {
+        if let cached = cachedChromeKey, let ts = chromeKeyCacheTimestamp,
+           Date().timeIntervalSince(ts) < chromeKeyCacheTTL
+        {
+            return cached
+        }
+
         let query: [String: Any] = [
             kSecClass as String: kSecClassGenericPassword,
             kSecAttrService as String: "Chrome Safe Storage",
@@ -126,7 +136,11 @@ enum CookieExtractor {
         var result: AnyObject?
         let status = SecItemCopyMatching(query as CFDictionary, &result)
         guard status == errSecSuccess, let data = result as? Data else { return nil }
-        return String(data: data, encoding: .utf8)
+
+        let key = String(data: data, encoding: .utf8)
+        cachedChromeKey = key
+        chromeKeyCacheTimestamp = Date()
+        return key
     }
 
     private static func pbkdf2(password: String, salt: String, iterations: Int, keyLength: Int) -> Data? {

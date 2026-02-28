@@ -18,35 +18,41 @@ struct UsageRowView: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 4) {
-            HStack {
-                Text(title)
-                    .font(.system(size: 12, weight: .medium))
-                Spacer()
-                Text("\(Int(displayPercent * 100))% \(showRemaining ? "left" : "used")")
-                    .font(.system(size: 12, weight: .semibold).monospacedDigit())
-                    .foregroundStyle(barColor)
-            }
+        VStack(alignment: .leading, spacing: 6) {
+            Text(title)
+                .font(.system(size: 14, weight: .semibold))
 
             GeometryReader { geo in
+                let fillWidth = max(0, geo.size.width * window.percentUsed)
                 ZStack(alignment: .leading) {
-                    RoundedRectangle(cornerRadius: 3)
-                        .fill(Color.primary.opacity(0.1))
-                    RoundedRectangle(cornerRadius: 3)
-                        .fill(barColor.opacity(0.85))
-                        .frame(width: geo.size.width * window.percentUsed)
+                    // Track
+                    Capsule()
+                        .fill(Color.white.opacity(0.25))
+
+                    // Fill
+                    Capsule()
+                        .fill(barColor.opacity(0.8))
+                        .frame(width: fillWidth)
+
+                    // Dot indicator at fill point
+                    Circle()
+                        .fill(barColor)
+                        .frame(width: 8, height: 8)
+                        .offset(x: max(0, fillWidth - 4))
                 }
             }
-            .frame(height: 8)
+            .frame(height: 4)
 
-            if let resetDate = window.resetDate, let remaining = window.timeUntilReset {
-                HStack(spacing: 4) {
+            HStack {
+                Text("\(Int(displayPercent * 100))% \(showRemaining ? "left" : "used")")
+                    .font(.system(size: 11).monospacedDigit())
+                    .foregroundStyle(.primary.opacity(0.7))
+                Spacer()
+                if let remaining = window.timeUntilReset {
                     Text("Resets in \(CountdownFormatter.format(remaining))")
-                    Text("(\(CountdownFormatter.absoluteTime(resetDate)))")
-                        .foregroundStyle(.tertiary)
+                        .font(.system(size: 11))
+                        .foregroundStyle(.primary.opacity(0.5))
                 }
-                .font(.system(size: 10))
-                .foregroundStyle(.secondary)
             }
         }
     }
