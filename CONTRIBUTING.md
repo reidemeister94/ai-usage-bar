@@ -7,7 +7,7 @@ Thanks for your interest in contributing! Here's how to get started.
 1. **Requirements:** macOS 14+, Xcode 16+ (or Swift 6.0+ toolchain), Apple Silicon Mac, Homebrew
 2. **Clone the repo:**
    ```bash
-   git clone https://github.com/YOUR_USER/ai-usage-bar.git
+   git clone https://github.com/reidemeister94/ai-usage-bar.git
    cd ai-usage-bar
    ```
 3. **Set up dev environment** (installs SwiftLint, SwiftFormat, pre-commit hooks):

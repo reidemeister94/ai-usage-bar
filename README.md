@@ -5,7 +5,7 @@
 **Claude API usage tracker for your macOS menu bar.**
 See your session and weekly limits at a glance. No browser tabs. No guessing.
 
-[![CI](https://github.com/YOUR_USER/ai-usage-bar/actions/workflows/ci.yml/badge.svg)](https://github.com/YOUR_USER/ai-usage-bar/actions/workflows/ci.yml)
+[![CI](https://github.com/reidemeister94/ai-usage-bar/actions/workflows/ci.yml/badge.svg)](https://github.com/reidemeister94/ai-usage-bar/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![macOS 14+](https://img.shields.io/badge/macOS-14%2B-brightgreen.svg)](https://www.apple.com/macos/sonoma/)
 [![Swift 6.0](https://img.shields.io/badge/Swift-6.0-orange.svg)](https://swift.org)
@@ -65,7 +65,7 @@ brew install --cask ai-usage-bar
 ### Or build from source
 
 ```bash
-git clone https://github.com/YOUR_USER/ai-usage-bar.git
+git clone https://github.com/reidemeister94/ai-usage-bar.git
 cd ai-usage-bar
 ./Scripts/package_app.sh
 

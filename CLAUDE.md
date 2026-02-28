@@ -37,7 +37,7 @@ make help            # Show all targets
 - `Sources/AIUsageBar/Services/` -- UsageServiceRouter, OAuth/Web/CLI services
 - `Sources/AIUsageBar/Views/` -- MenuBarIcon, UsagePanelView, UsageRowView
 - `Sources/AIUsageBar/Utilities/` -- CountdownFormatter, PTYSession
-- `Resources/` -- Info.plist
+- `Resources/` -- AppIcon.icns, Info.plist
 - `Scripts/` -- package_app.sh (creates signed .app bundle)
 - `Formula/` -- Homebrew cask formula
 - `Package.swift` -- SPM manifest (Swift 6.0, macOS 14+)
@@ -49,6 +49,7 @@ make help            # Show all targets
 | `AppState.swift` | Centralized state management (`@Observable` macro) |
 | `AppDelegate.swift` | Menu bar setup, NSStatusItem, icon rendering |
 | `AIUsageBarApp.swift` | `@main` entry point |
+| `UsageService.swift` | `UsageService` protocol (fetchUsage, isAvailable) |
 | `UsageServiceRouter.swift` | Routes to OAuth → CLI → Web with cascade fallback |
 | `OAuthUsageService.swift` | Anthropic OAuth API integration |
 | `CLIUsageService.swift` | `claude usage --output json` subprocess runner |
