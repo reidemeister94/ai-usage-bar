@@ -19,7 +19,7 @@ struct OAuthToken: Sendable {
 enum KeychainReader {
     private nonisolated(unsafe) static var cachedToken: OAuthToken?
     private nonisolated(unsafe) static var cacheTimestamp: Date?
-    private static let cacheTTL: TimeInterval = 60
+    private static let cacheTTL: TimeInterval = 300
 
     static func readClaudeCredentials() throws -> OAuthToken {
         if let cached = cachedToken, let ts = cacheTimestamp,
@@ -28,14 +28,14 @@ enum KeychainReader {
             return cached
         }
 
-        // Try Keychain first ("Claude Code-credentials")
-        if let token = try? readFromKeychain() {
+        // Try credentials file first (no Keychain authorization prompt)
+        if let token = try? readFromFile() {
             cachedToken = token
             cacheTimestamp = Date()
             return token
         }
-        // Fallback to credentials file
-        if let token = try? readFromFile() {
+        // Fallback to Keychain (may trigger macOS authorization prompt)
+        if let token = try? readFromKeychain() {
             cachedToken = token
             cacheTimestamp = Date()
             return token
