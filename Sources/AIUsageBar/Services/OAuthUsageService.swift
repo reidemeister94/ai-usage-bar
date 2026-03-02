@@ -30,9 +30,12 @@ struct OAuthUsageService: UsageService {
         case 200:
             return try parseResponse(data, token: token)
         case 401:
+            // Invalidate cached token since it's expired
+            KeychainReader.invalidateCache()
             // Try refreshing the token
             if let refreshToken = token.refreshToken {
                 let newToken = try await TokenRefresher.refresh(using: refreshToken)
+                KeychainReader.updateCache(newToken)
                 return try await fetchWithToken(newToken)
             }
             throw UsageError.unauthorized
@@ -107,7 +110,7 @@ struct OAuthUsageService: UsageService {
         return ExtraUsage(spentCents: spent, limitCents: limit)
     }
 
-    // ISO8601 with fractional seconds and +00:00 timezone
+    /// ISO8601 with fractional seconds and +00:00 timezone
     private static func parseISO8601(_ string: String) -> Date? {
         let formatter = ISO8601DateFormatter()
         formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]

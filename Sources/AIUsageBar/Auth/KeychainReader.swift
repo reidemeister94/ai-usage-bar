@@ -18,34 +18,32 @@ struct OAuthToken: Sendable {
 
 enum KeychainReader {
     private nonisolated(unsafe) static var cachedToken: OAuthToken?
-    private nonisolated(unsafe) static var cacheTimestamp: Date?
-    private static let cacheTTL: TimeInterval = 300
 
     static func readClaudeCredentials() throws -> OAuthToken {
-        if let cached = cachedToken, let ts = cacheTimestamp,
-           Date().timeIntervalSince(ts) < cacheTTL
-        {
+        if let cached = cachedToken {
             return cached
         }
 
         // Try credentials file first (no Keychain authorization prompt)
         if let token = try? readFromFile() {
             cachedToken = token
-            cacheTimestamp = Date()
             return token
         }
         // Fallback to Keychain (may trigger macOS authorization prompt)
         if let token = try? readFromKeychain() {
             cachedToken = token
-            cacheTimestamp = Date()
             return token
         }
         throw UsageError.keychainReadFailed(-1)
     }
 
+    /// Update the cached token (e.g. after a successful token refresh).
+    static func updateCache(_ token: OAuthToken) {
+        cachedToken = token
+    }
+
     static func invalidateCache() {
         cachedToken = nil
-        cacheTimestamp = nil
     }
 
     private static func readFromKeychain() throws -> OAuthToken {
