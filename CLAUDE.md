@@ -2,7 +2,7 @@
 
 ## Project Overview
 
-Native macOS menu bar app (Swift 6 / SwiftUI) that displays Claude API usage statistics in real-time. Shows session (5-hour) and weekly (7-day) rate limit usage with automatic refresh.
+Native macOS menu bar app (Swift 6 / SwiftUI) that displays Claude API usage statistics in real-time. Shows session (5-hour), weekly (7-day), and model-specific rate limit usage with automatic refresh. Fetches data from the `https://api.anthropic.com/api/oauth/usage` endpoint using Claude Code's OAuth credentials.
 
 ## Build Commands
 
@@ -52,12 +52,12 @@ make help            # Show all targets
 | `UsageService.swift` | `UsageService` protocol (fetchUsage, isAvailable) |
 | `UsageServiceRouter.swift` | Routes to OAuth → CLI → Web with cascade fallback |
 | `OAuthUsageService.swift` | Anthropic OAuth API integration |
-| `CLIUsageService.swift` | `claude usage --output json` subprocess runner |
+| `CLIUsageService.swift` | Claude CLI interactive `/status` fallback runner |
 | `WebUsageService.swift` | claude.ai web API via session cookies |
 | `KeychainReader.swift` | OAuth token reading from Keychain / ~/.claude/.credentials.json |
 | `CookieExtractor.swift` | Chrome (AES-128 decryption) & Safari cookie extraction |
 | `TokenRefresher.swift` | OAuth token refresh logic |
-| `UsageData.swift` | Data structures for usage windows (session, weekly) |
+| `UsageData.swift` | Data structures for usage windows (session, weekly, model-specific, cowork, oauth apps) |
 | `Settings.swift` | RefreshInterval, PreferredSource, DisplayMode enums |
 | `PlanInfo.swift` | Plan tier information |
 | `MenuBarIcon.swift` | Renders 18x18 icon with usage bars |
@@ -78,6 +78,30 @@ make help            # Show all targets
 - **140-character line length limit**
 - **4-space indentation**
 - **Trailing commas enforced**
+
+## OAuth Usage API
+
+The primary data source is `GET https://api.anthropic.com/api/oauth/usage` with headers:
+- `Authorization: Bearer <token>` (from Claude Code Keychain credentials)
+- `anthropic-beta: oauth-2025-04-20`
+
+Response format (as of March 2026):
+```json
+{
+  "five_hour": {"utilization": 40.0, "resets_at": "2026-03-06T02:00:00+00:00"},
+  "seven_day": {"utilization": 94.0, "resets_at": "2026-03-06T12:00:00+00:00"},
+  "seven_day_opus": null,
+  "seven_day_sonnet": {"utilization": 4.0, "resets_at": "..."},
+  "seven_day_cowork": null,
+  "seven_day_oauth_apps": null,
+  "extra_usage": {"is_enabled": true, "monthly_limit": 0, "used_credits": 0.0, "utilization": null}
+}
+```
+
+- `utilization` is 0-100 (percent), divide by 100 for display
+- All `seven_day_*` windows can be null
+- `extra_usage.monthly_limit` and `used_credits` are in cents
+- Credentials are stored in macOS Keychain under service `"Claude Code-credentials"` with a `claudeAiOauth` nested key
 
 ## Platform
 

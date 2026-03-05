@@ -1,11 +1,13 @@
 import Foundation
 
 struct UsageWindow: Sendable, Equatable {
-    let percentUsed: Double       // 0.0 to 1.0
+    let percentUsed: Double // 0.0 to 1.0
     let resetDate: Date?
     let isAvailable: Bool
 
-    var percentRemaining: Double { 1.0 - percentUsed }
+    var percentRemaining: Double {
+        1.0 - percentUsed
+    }
 
     var timeUntilReset: TimeInterval? {
         guard let resetDate else { return nil }
@@ -17,10 +19,18 @@ struct UsageWindow: Sendable, Equatable {
 }
 
 struct ExtraUsage: Sendable, Equatable {
-    let spentCents: Int
-    let limitCents: Int
-    var spentDollars: Double { Double(spentCents) / 100.0 }
-    var limitDollars: Double { Double(limitCents) / 100.0 }
+    let isEnabled: Bool
+    let monthlyLimitCents: Int
+    let usedCreditsCents: Double
+    let utilization: Double?
+
+    var spentDollars: Double {
+        usedCreditsCents / 100.0
+    }
+
+    var limitDollars: Double {
+        Double(monthlyLimitCents) / 100.0
+    }
 }
 
 struct UsageData: Sendable, Equatable {
@@ -28,6 +38,8 @@ struct UsageData: Sendable, Equatable {
     let weekly: UsageWindow
     let opusWeekly: UsageWindow?
     let sonnetWeekly: UsageWindow?
+    let coworkWeekly: UsageWindow?
+    let oauthAppsWeekly: UsageWindow?
     let extraUsage: ExtraUsage?
     let planInfo: PlanInfo?
     let fetchedAt: Date

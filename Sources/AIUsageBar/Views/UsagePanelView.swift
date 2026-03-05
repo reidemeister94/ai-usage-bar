@@ -128,6 +128,22 @@ struct UsagePanelView: View {
                     showRemaining: state.showRemaining
                 )
             }
+
+            if let cowork = usage.coworkWeekly, cowork.isAvailable {
+                UsageRowView(
+                    title: "Cowork",
+                    window: cowork,
+                    showRemaining: state.showRemaining
+                )
+            }
+
+            if let oauthApps = usage.oauthAppsWeekly, oauthApps.isAvailable {
+                UsageRowView(
+                    title: "OAuth Apps",
+                    window: oauthApps,
+                    showRemaining: state.showRemaining
+                )
+            }
         }
         .padding(10)
         .background(
@@ -157,10 +173,14 @@ struct UsagePanelView: View {
                 Text("Extra usage")
                     .font(.system(size: 12, weight: .medium))
                 Spacer()
-                if extra.limitCents > 0 {
+                if let pct = extra.utilization {
+                    Text("\(Int(pct))%")
+                        .font(.system(size: 11).monospacedDigit())
+                        .foregroundStyle(.secondary)
+                } else if extra.monthlyLimitCents > 0 {
                     let pct = Int(
-                        Double(extra.spentCents)
-                            / Double(extra.limitCents) * 100
+                        extra.usedCreditsCents
+                            / Double(extra.monthlyLimitCents) * 100
                     )
                     Text("\(pct)%")
                         .font(.system(size: 11).monospacedDigit())
@@ -169,13 +189,17 @@ struct UsagePanelView: View {
             }
 
             GeometryReader { geo in
-                let percent = extra.limitCents > 0
-                    ? min(
+                let percent: Double = if let u = extra.utilization {
+                    min(1.0, u / 100.0)
+                } else if extra.monthlyLimitCents > 0 {
+                    min(
                         1.0,
-                        Double(extra.spentCents)
-                            / Double(extra.limitCents)
+                        extra.usedCreditsCents
+                            / Double(extra.monthlyLimitCents)
                     )
-                    : 0.0
+                } else {
+                    0.0
+                }
                 let fillWidth = max(0, geo.size.width * percent)
 
                 ZStack(alignment: .leading) {
@@ -188,13 +212,22 @@ struct UsagePanelView: View {
             }
             .frame(height: 6)
 
-            Text(String(
-                format: "$%.2f / $%.2f this month",
-                extra.spentDollars,
-                extra.limitDollars
-            ))
-            .font(.system(size: 10).monospacedDigit())
-            .foregroundStyle(.secondary)
+            if extra.monthlyLimitCents > 0 {
+                Text(String(
+                    format: "$%.2f / $%.2f this month",
+                    extra.spentDollars,
+                    extra.limitDollars
+                ))
+                .font(.system(size: 10).monospacedDigit())
+                .foregroundStyle(.secondary)
+            } else {
+                Text(String(
+                    format: "$%.2f spent this month",
+                    extra.spentDollars
+                ))
+                .font(.system(size: 10).monospacedDigit())
+                .foregroundStyle(.secondary)
+            }
         }
         .padding(10)
         .background(

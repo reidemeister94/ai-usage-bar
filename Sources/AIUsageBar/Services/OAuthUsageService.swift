@@ -76,6 +76,8 @@ struct OAuthUsageService: UsageService {
             weekly: parseWindow(json["seven_day"]),
             opusWeekly: parseWindowOptional(json["seven_day_opus"]),
             sonnetWeekly: parseWindowOptional(json["seven_day_sonnet"]),
+            coworkWeekly: parseWindowOptional(json["seven_day_cowork"]),
+            oauthAppsWeekly: parseWindowOptional(json["seven_day_oauth_apps"]),
             extraUsage: parseExtraUsage(json["extra_usage"]),
             planInfo: planInfo,
             fetchedAt: Date(),
@@ -105,9 +107,17 @@ struct OAuthUsageService: UsageService {
 
     private func parseExtraUsage(_ raw: Any?) -> ExtraUsage? {
         guard let dict = raw as? [String: Any] else { return nil }
-        guard let spent = dict["spend_cents"] as? Int,
-              let limit = dict["limit_cents"] as? Int else { return nil }
-        return ExtraUsage(spentCents: spent, limitCents: limit)
+        let isEnabled = dict["is_enabled"] as? Bool ?? false
+        guard isEnabled else { return nil }
+        let monthlyLimit = dict["monthly_limit"] as? Int ?? 0
+        let usedCredits = (dict["used_credits"] as? NSNumber)?.doubleValue ?? 0.0
+        let utilization = (dict["utilization"] as? NSNumber)?.doubleValue
+        return ExtraUsage(
+            isEnabled: isEnabled,
+            monthlyLimitCents: monthlyLimit,
+            usedCreditsCents: usedCredits,
+            utilization: utilization
+        )
     }
 
     /// ISO8601 with fractional seconds and +00:00 timezone

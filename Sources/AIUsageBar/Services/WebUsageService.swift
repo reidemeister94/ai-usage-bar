@@ -17,13 +17,11 @@ struct WebUsageService: UsageService {
         let accountUUID = try? await fetchAccountUUID(sessionKey: sessionKey)
 
         // Step 3: Fetch usage (with account_uuid for team org fix)
-        let usage = try await fetchUsageData(
+        return try await fetchUsageData(
             sessionKey: sessionKey,
             orgId: orgId,
             accountUUID: accountUUID
         )
-
-        return usage
     }
 
     private func fetchOrganizationId(sessionKey: String) async throws -> String {
@@ -38,7 +36,8 @@ struct WebUsageService: UsageService {
 
         guard let orgs = try JSONSerialization.jsonObject(with: data) as? [[String: Any]],
               let first = orgs.first,
-              let uuid = first["uuid"] as? String else {
+              let uuid = first["uuid"] as? String
+        else {
             throw UsageError.invalidResponse
         }
 
@@ -56,7 +55,8 @@ struct WebUsageService: UsageService {
         }
 
         guard let json = try JSONSerialization.jsonObject(with: data) as? [String: Any],
-              let uuid = json["uuid"] as? String else {
+              let uuid = json["uuid"] as? String
+        else {
             throw UsageError.invalidResponse
         }
 
@@ -98,6 +98,8 @@ struct WebUsageService: UsageService {
             weekly: parseWindow(json["weekly"] ?? json["seven_day"]),
             opusWeekly: parseWindowOptional(json["seven_day_opus"]),
             sonnetWeekly: parseWindowOptional(json["seven_day_sonnet"]),
+            coworkWeekly: parseWindowOptional(json["seven_day_cowork"]),
+            oauthAppsWeekly: parseWindowOptional(json["seven_day_oauth_apps"]),
             extraUsage: nil,
             planInfo: nil,
             fetchedAt: Date(),

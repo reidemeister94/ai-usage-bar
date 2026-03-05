@@ -11,23 +11,12 @@ struct CLIUsageService: UsageService {
     }
 
     func fetchUsage() async throws -> UsageData {
-        // Run: claude usage --output json
-        // If that fails, try the interactive /usage approach
-        let output: String
-        do {
-            output = try await PTYSession.runClaude(
-                arguments: ["usage", "--output", "json"],
-                input: "",
-                timeout: 15
-            )
-        } catch {
-            // Fallback: try interactive mode
-            output = try await PTYSession.runClaude(
-                arguments: [],
-                input: "/usage\nexit\n",
-                timeout: 15
-            )
-        }
+        // claude usage subcommand no longer exists; use interactive /status
+        let output = try await PTYSession.runClaude(
+            arguments: [],
+            input: "/status\nexit\n",
+            timeout: 15
+        )
 
         return try parseOutput(output)
     }
@@ -40,7 +29,7 @@ struct CLIUsageService: UsageService {
             options: .regularExpression
         )
 
-        // Try JSON parsing first
+        // Try JSON parsing first (in case future CLI returns JSON)
         if let jsonData = clean.data(using: .utf8),
            let json = try? JSONSerialization.jsonObject(with: jsonData) as? [String: Any]
         {
@@ -67,6 +56,8 @@ struct CLIUsageService: UsageService {
             weekly: windowFromJSON("weekly"),
             opusWeekly: nil,
             sonnetWeekly: nil,
+            coworkWeekly: nil,
+            oauthAppsWeekly: nil,
             extraUsage: nil,
             planInfo: nil,
             fetchedAt: Date(),
@@ -76,7 +67,7 @@ struct CLIUsageService: UsageService {
 
     private func parseText(_ text: String) throws -> UsageData {
         let session = parseSection(text, keywords: ["session", "5-hour", "5 hour", "5h"])
-        let weekly = parseSection(text, keywords: ["week", "7-day", "7 day", "7d"])
+        let weekly = parseSection(text, keywords: ["week", "7-day", "7 day", "7d", "all models"])
 
         guard session.isAvailable || weekly.isAvailable else {
             throw UsageError.parseError("Could not parse CLI output")
@@ -87,6 +78,8 @@ struct CLIUsageService: UsageService {
             weekly: weekly,
             opusWeekly: nil,
             sonnetWeekly: nil,
+            coworkWeekly: nil,
+            oauthAppsWeekly: nil,
             extraUsage: nil,
             planInfo: nil,
             fetchedAt: Date(),

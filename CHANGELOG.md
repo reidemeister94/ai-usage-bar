@@ -10,17 +10,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Menu bar icon with session (5-hour) and weekly (7-day) usage bars
 - Popover panel with detailed usage statistics
 - OAuth authentication via Keychain / Claude Code credentials
-- Claude CLI fallback (`claude usage --output json`)
+- Claude CLI fallback (interactive `/status` command)
 - Web cookie extraction (Chrome with AES decryption, Safari) as last resort
-- Model-specific usage tracking (Opus, Sonnet)
+- Model-specific usage tracking (Opus, Sonnet, Cowork, OAuth Apps)
 - Plan tier display (Free, Pro, Max, Team, Enterprise)
 - Toggle between "Used" and "Remaining" percentage display
 - Configurable refresh intervals (1, 2, 5, 15 minutes)
 - Countdown timers with absolute reset times
-- Extra usage charges tracking (in dollars)
+- Extra usage tracking with monthly limit and spend display
 - Auto-refresh with configurable polling
 - Homebrew cask formula for distribution
 - App bundle packaging script with ad-hoc code signing
+
 
 ## v1.1.5 (2026-03-02)
 

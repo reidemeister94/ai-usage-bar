@@ -41,9 +41,9 @@ Color-coded: green → yellow → orange → red as you approach limits.
 Click the icon to see detailed stats:
 - Session and weekly usage percentages with progress bars
 - Countdown timers until reset (with absolute time)
-- Model-specific usage (Opus, Sonnet)
+- Model-specific usage (Opus, Sonnet, Cowork, OAuth Apps)
 - Plan tier (Free, Pro, Max, Team, Enterprise)
-- Extra usage charges (in dollars, if applicable)
+- Extra usage tracking (monthly limit, spend, utilization)
 - Data source indicator and last refresh time
 
 ### Settings
@@ -86,7 +86,7 @@ AI Usage Bar tries three methods in order, using the first that works:
 | Method | How it works | Setup |
 |--------|-------------|-------|
 | **OAuth** | Reads tokens from Keychain or `~/.claude/.credentials.json` | Use [Claude Code](https://claude.ai/claude-code) -- tokens are created automatically |
-| **Claude CLI** | Runs `claude usage --output json` | Install [Claude Code CLI](https://claude.ai/claude-code) |
+| **Claude CLI** | Runs interactive `/status` command via Claude Code | Install [Claude Code CLI](https://claude.ai/claude-code) |
 | **Web cookies** | Extracts session cookies from Chrome or Safari | Just be logged into [claude.ai](https://claude.ai) |
 
 No configuration needed in most cases -- if you use Claude Code, it works out of the box.
@@ -149,7 +149,7 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for code style and PR guidelines.
 |---------|-----|
 | Icon shows dimmed/gray | No usage data available. Check authentication method in popover. |
 | "OAuth token expired" | Relaunch Claude Code to refresh the token, then restart AI Usage Bar. |
-| CLI fallback not working | Ensure `claude` is installed and in your PATH. Run `claude usage` manually to verify. |
+| CLI fallback not working | Ensure `claude` is installed and in your PATH. Run `claude auth status` to verify authentication. |
 | Cookie extraction fails | Make sure you're logged into claude.ai in Chrome or Safari. Chrome must be fully quit first. |
 | App won't open | Right-click > Open on first launch to bypass Gatekeeper. |
 | High CPU usage | Increase the refresh interval in the popover settings (try 5 or 15 minutes). |

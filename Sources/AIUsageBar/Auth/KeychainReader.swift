@@ -109,14 +109,25 @@ enum KeychainReader {
         let org = dict["organization"] as? [String: Any]
         let account = dict["account"] as? [String: Any]
 
+        // organizationUUID/Name may come from nested object or from
+        // `claude auth status` enrichment later
+        let orgUUID = org?["uuid"] as? String
+            ?? dict["organizationUUID"] as? String
+        let orgName = org?["name"] as? String
+            ?? dict["organizationName"] as? String
+        let acctUUID = account?["uuid"] as? String
+            ?? dict["accountUUID"] as? String
+        let email = account?["email_address"] as? String
+            ?? dict["email"] as? String
+
         return OAuthToken(
             accessToken: accessToken,
             refreshToken: refreshToken,
             scopes: scopes,
-            organizationUUID: org?["uuid"] as? String,
-            organizationName: org?["name"] as? String,
-            accountUUID: account?["uuid"] as? String,
-            email: account?["email_address"] as? String,
+            organizationUUID: orgUUID,
+            organizationName: orgName,
+            accountUUID: acctUUID,
+            email: email,
             rateLimitTier: rateLimitTier ?? subscriptionType
         )
     }
