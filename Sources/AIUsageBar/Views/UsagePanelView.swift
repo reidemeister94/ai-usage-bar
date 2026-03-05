@@ -165,75 +165,57 @@ struct UsagePanelView: View {
 
     // MARK: - Extra Usage
 
+    private func extraUsagePercent(_ extra: ExtraUsage) -> Double {
+        if let u = extra.utilization { return min(1.0, u / 100.0) }
+        if extra.monthlyLimitCents > 0 {
+            return min(1.0, extra.usedCreditsCents / Double(extra.monthlyLimitCents))
+        }
+        return 0.0
+    }
+
     private func extraUsageSection(
         _ extra: ExtraUsage
     ) -> some View {
-        VStack(alignment: .leading, spacing: 6) {
+        let percent = extraUsagePercent(extra)
+        return VStack(alignment: .leading, spacing: 6) {
             HStack {
                 Text("Extra usage")
                     .font(.system(size: 12, weight: .medium))
                 Spacer()
-                if let pct = extra.utilization {
-                    Text("\(Int(pct))%")
-                        .font(.system(size: 11).monospacedDigit())
-                        .foregroundStyle(.secondary)
-                } else if extra.monthlyLimitCents > 0 {
-                    let pct = Int(
-                        extra.usedCreditsCents
-                            / Double(extra.monthlyLimitCents) * 100
-                    )
-                    Text("\(pct)%")
+                if percent > 0 {
+                    Text("\(Int(percent * 100))%")
                         .font(.system(size: 11).monospacedDigit())
                         .foregroundStyle(.secondary)
                 }
             }
 
             GeometryReader { geo in
-                let percent: Double = if let u = extra.utilization {
-                    min(1.0, u / 100.0)
-                } else if extra.monthlyLimitCents > 0 {
-                    min(
-                        1.0,
-                        extra.usedCreditsCents
-                            / Double(extra.monthlyLimitCents)
-                    )
-                } else {
-                    0.0
-                }
-                let fillWidth = max(0, geo.size.width * percent)
-
                 ZStack(alignment: .leading) {
                     RoundedRectangle(cornerRadius: 3)
                         .fill(Color(nsColor: .separatorColor))
                     RoundedRectangle(cornerRadius: 3)
                         .fill(Color.blue)
-                        .frame(width: fillWidth)
+                        .frame(width: max(0, geo.size.width * percent))
                 }
             }
             .frame(height: 6)
 
-            if extra.monthlyLimitCents > 0 {
-                Text(String(
-                    format: "$%.2f / $%.2f this month",
-                    extra.spentDollars,
-                    extra.limitDollars
-                ))
-                .font(.system(size: 10).monospacedDigit())
-                .foregroundStyle(.secondary)
-            } else {
-                Text(String(
-                    format: "$%.2f spent this month",
-                    extra.spentDollars
-                ))
-                .font(.system(size: 10).monospacedDigit())
-                .foregroundStyle(.secondary)
-            }
+            extraUsageLabel(extra)
         }
         .padding(10)
         .background(
             RoundedRectangle(cornerRadius: 8)
                 .fill(Color(nsColor: .controlBackgroundColor))
         )
+    }
+
+    private func extraUsageLabel(_ extra: ExtraUsage) -> some View {
+        let text = extra.monthlyLimitCents > 0
+            ? String(format: "$%.2f / $%.2f this month", extra.spentDollars, extra.limitDollars)
+            : String(format: "$%.2f spent this month", extra.spentDollars)
+        return Text(text)
+            .font(.system(size: 10).monospacedDigit())
+            .foregroundStyle(.secondary)
     }
 
     // MARK: - Error
