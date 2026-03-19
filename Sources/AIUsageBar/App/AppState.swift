@@ -1,23 +1,25 @@
-import SwiftUI
 import Combine
+import SwiftUI
 
 @MainActor
 @Observable
 final class AppState {
     var usageData: UsageData?
     var lastError: UsageError?
-    var isRefreshing: Bool = false
+    var isRefreshing = false
 
-    // Settings — persisted via UserDefaults
+    /// Settings — persisted via UserDefaults
     var refreshInterval: RefreshInterval {
         didSet {
             UserDefaults.standard.set(refreshInterval.rawValue, forKey: "refreshInterval")
             restartPolling()
         }
     }
+
     var showRemaining: Bool {
         didSet { UserDefaults.standard.set(showRemaining, forKey: "showRemaining") }
     }
+
     var preferredSource: PreferredSource {
         didSet { UserDefaults.standard.set(preferredSource.rawValue, forKey: "preferredSource") }
     }
@@ -26,13 +28,14 @@ final class AppState {
 
     private var refreshTimer: Timer?
     private let usageRouter = UsageServiceRouter()
+    private var consecutiveRateLimits = 0
 
     init() {
         let savedInterval = UserDefaults.standard.integer(forKey: "refreshInterval")
-        self.refreshInterval = RefreshInterval(rawValue: savedInterval) ?? .twoMinutes
-        self.showRemaining = UserDefaults.standard.object(forKey: "showRemaining") as? Bool ?? true
+        refreshInterval = RefreshInterval(rawValue: savedInterval) ?? .fiveMinutes
+        showRemaining = UserDefaults.standard.object(forKey: "showRemaining") as? Bool ?? true
         let savedSource = UserDefaults.standard.string(forKey: "preferredSource") ?? "Auto"
-        self.preferredSource = PreferredSource(rawValue: savedSource) ?? .auto
+        preferredSource = PreferredSource(rawValue: savedSource) ?? .auto
     }
 
     func startPolling() {
@@ -43,13 +46,22 @@ final class AppState {
     private func restartPolling() {
         refreshTimer?.invalidate()
         refreshTimer = Timer.scheduledTimer(
-            withTimeInterval: refreshInterval.seconds,
+            withTimeInterval: effectiveInterval,
             repeats: true
         ) { [weak self] _ in
             Task { @MainActor [weak self] in
                 await self?.refresh()
             }
         }
+    }
+
+    /// Backs off when rate-limited
+    private var effectiveInterval: TimeInterval {
+        if consecutiveRateLimits > 0 {
+            let backoff = refreshInterval.seconds * pow(2.0, Double(min(consecutiveRateLimits, 4)))
+            return min(backoff, 3600) // cap at 1 hour
+        }
+        return refreshInterval.seconds
     }
 
     func refresh() async {
@@ -59,10 +71,20 @@ final class AppState {
 
         do {
             let data = try await usageRouter.fetchUsage(preferred: preferredSource)
-            self.usageData = data
-            self.lastError = nil
+            usageData = data
+            lastError = nil
+            if consecutiveRateLimits > 0 {
+                consecutiveRateLimits = 0
+                restartPolling()
+            }
+        } catch let error as UsageError {
+            if case .rateLimited = error {
+                consecutiveRateLimits += 1
+                restartPolling()
+            }
+            self.lastError = error
         } catch {
-            self.lastError = error as? UsageError ?? .networkError(error.localizedDescription)
+            lastError = .networkError(error.localizedDescription)
         }
 
         onUsageUpdate?()

@@ -30,19 +30,48 @@ struct OAuthUsageService: UsageService {
         case 200:
             return try parseResponse(data, token: token)
         case 401:
-            // Invalidate cached token since it's expired
-            KeychainReader.invalidateCache()
-            // Try refreshing the token
-            if let refreshToken = token.refreshToken {
-                let newToken = try await TokenRefresher.refresh(using: refreshToken)
-                KeychainReader.updateCache(newToken)
-                return try await fetchWithToken(newToken)
-            }
-            throw UsageError.unauthorized
+            return try await handleUnauthorized(token: token)
+        case 429:
+            return try await handleRateLimited(token: token, response: http)
         case 403:
             throw UsageError.forbidden("OAuth usage endpoint returned 403")
         default:
             throw UsageError.serverError(http.statusCode)
+        }
+    }
+
+    private func handleUnauthorized(token: OAuthToken) async throws -> UsageData {
+        KeychainReader.invalidateCache()
+        guard let refreshToken = token.refreshToken else {
+            throw UsageError.unauthorized
+        }
+        let newToken = try await TokenRefresher.refresh(using: refreshToken)
+        KeychainReader.updateCache(newToken)
+        KeychainReader.persistToFile(newToken)
+        return try await fetchWithToken(newToken)
+    }
+
+    /// Rate-limited: refresh the token to get a fresh rate limit window
+    private func handleRateLimited(
+        token: OAuthToken,
+        response: HTTPURLResponse
+    ) async throws -> UsageData {
+        let retryAfter = response.value(forHTTPHeaderField: "Retry-After")
+            .flatMap { TimeInterval($0) }
+
+        // Token refresh resets the per-token rate limit window
+        guard let refreshToken = token.refreshToken else {
+            throw UsageError.rateLimited(retryAfter: retryAfter)
+        }
+
+        do {
+            let newToken = try await TokenRefresher.refresh(using: refreshToken)
+            KeychainReader.invalidateCache()
+            KeychainReader.updateCache(newToken)
+            KeychainReader.persistToFile(newToken)
+            return try await fetchWithToken(newToken)
+        } catch {
+            throw UsageError.rateLimited(retryAfter: retryAfter)
         }
     }
 
@@ -54,10 +83,20 @@ struct OAuthUsageService: UsageService {
         request.timeoutInterval = 15
 
         let (data, response) = try await URLSession.shared.data(for: request)
-        guard let http = response as? HTTPURLResponse, http.statusCode == 200 else {
+        guard let http = response as? HTTPURLResponse else {
+            throw UsageError.invalidResponse
+        }
+
+        switch http.statusCode {
+        case 200:
+            return try parseResponse(data, token: token)
+        case 429:
+            let retryAfter = http.value(forHTTPHeaderField: "Retry-After")
+                .flatMap { TimeInterval($0) }
+            throw UsageError.rateLimited(retryAfter: retryAfter)
+        default:
             throw UsageError.unauthorized
         }
-        return try parseResponse(data, token: token)
     }
 
     private func parseResponse(_ data: Data, token: OAuthToken) throws -> UsageData {

@@ -1,43 +1,51 @@
 import Foundation
 
-enum RefreshInterval: Int, Sendable, CaseIterable, Identifiable {
-    case oneMinute = 60
-    case twoMinutes = 120
+enum RefreshInterval: Int, CaseIterable, Identifiable {
     case fiveMinutes = 300
+    case tenMinutes = 600
     case fifteenMinutes = 900
+    case thirtyMinutes = 1800
 
-    var id: Int { rawValue }
+    var id: Int {
+        rawValue
+    }
 
-    var seconds: TimeInterval { TimeInterval(rawValue) }
+    var seconds: TimeInterval {
+        TimeInterval(rawValue)
+    }
 
     var label: String {
         switch self {
-        case .oneMinute: "1 minute"
-        case .twoMinutes: "2 minutes"
         case .fiveMinutes: "5 minutes"
+        case .tenMinutes: "10 minutes"
         case .fifteenMinutes: "15 minutes"
+        case .thirtyMinutes: "30 minutes"
         }
     }
 }
 
-enum CookieSource: String, Sendable, CaseIterable, Identifiable {
+enum CookieSource: String, CaseIterable, Identifiable {
     case automatic = "Automatic"
     case chrome = "Chrome"
     case safari = "Safari"
 
-    var id: String { rawValue }
+    var id: String {
+        rawValue
+    }
 }
 
-enum PreferredSource: String, Sendable, CaseIterable, Identifiable {
+enum PreferredSource: String, CaseIterable, Identifiable {
     case auto = "Auto"
     case oauth = "OAuth"
     case cli = "CLI"
     case web = "Web"
 
-    var id: String { rawValue }
+    var id: String {
+        rawValue
+    }
 }
 
-enum UsageError: Error, Sendable {
+enum UsageError: Error {
     case noServiceAvailable
     case unauthorized
     case forbidden(String)
@@ -50,6 +58,7 @@ enum UsageError: Error, Sendable {
     case noCookieFound
     case cliTimeout
     case cliNotFound
+    case rateLimited(retryAfter: TimeInterval?)
     case parseError(String)
     case networkError(String)
 
@@ -57,18 +66,19 @@ enum UsageError: Error, Sendable {
         switch self {
         case .noServiceAvailable: "No authentication method available"
         case .unauthorized: "Unauthorized — session may have expired"
-        case .forbidden(let msg): "Access denied: \(msg)"
-        case .serverError(let code): "Server error (\(code))"
+        case let .forbidden(msg): "Access denied: \(msg)"
+        case let .serverError(code): "Server error (\(code))"
         case .invalidResponse: "Invalid response from API"
-        case .keychainReadFailed(let status): "Keychain read failed (status: \(status))"
+        case let .keychainReadFailed(status): "Keychain read failed (status: \(status))"
         case .invalidCredentialFormat: "Invalid credential format"
-        case .missingScope(let scope): "Missing OAuth scope: \(scope)"
+        case let .missingScope(scope): "Missing OAuth scope: \(scope)"
         case .tokenRefreshFailed: "Token refresh failed"
         case .noCookieFound: "No session cookie found in browsers"
         case .cliTimeout: "Claude CLI timed out"
         case .cliNotFound: "Claude CLI not found"
-        case .parseError(let msg): "Parse error: \(msg)"
-        case .networkError(let msg): "Network error: \(msg)"
+        case .rateLimited: "Rate limited — backing off automatically"
+        case let .parseError(msg): "Parse error: \(msg)"
+        case let .networkError(msg): "Network error: \(msg)"
         }
     }
 }

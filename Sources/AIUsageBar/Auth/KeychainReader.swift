@@ -1,7 +1,7 @@
 import Foundation
 import Security
 
-struct OAuthToken: Sendable {
+struct OAuthToken {
     let accessToken: String
     let refreshToken: String?
     let scopes: Set<String>
@@ -19,21 +19,40 @@ struct OAuthToken: Sendable {
 enum KeychainReader {
     private nonisolated(unsafe) static var cachedToken: OAuthToken?
 
+    /// App-owned cache file to avoid repeated Keychain prompts
+    private static var appCachePath: URL {
+        let appSupport = FileManager.default.urls(
+            for: .applicationSupportDirectory,
+            in: .userDomainMask
+        ).first!.appendingPathComponent("AIUsageBar")
+        return appSupport.appendingPathComponent("cached_credentials.json")
+    }
+
     static func readClaudeCredentials() throws -> OAuthToken {
         if let cached = cachedToken {
             return cached
         }
 
-        // Try credentials file first (no Keychain authorization prompt)
+        // 1. Try Claude Code credentials file (no prompt)
         if let token = try? readFromFile() {
             cachedToken = token
             return token
         }
-        // Fallback to Keychain (may trigger macOS authorization prompt)
-        if let token = try? readFromKeychain() {
+
+        // 2. Try app-owned cache (no prompt)
+        if let token = try? readFromAppCache() {
             cachedToken = token
             return token
         }
+
+        // 3. Fallback to Keychain (may prompt once)
+        if let token = try? readFromKeychain() {
+            cachedToken = token
+            // Persist to app cache so we never prompt again
+            persistToFile(token)
+            return token
+        }
+
         throw UsageError.keychainReadFailed(-1)
     }
 
@@ -44,6 +63,36 @@ enum KeychainReader {
 
     static func invalidateCache() {
         cachedToken = nil
+    }
+
+    /// Persist token to app-owned cache file so Keychain is never needed again
+    static func persistToFile(_ token: OAuthToken) {
+        var dict: [String: Any] = [
+            "accessToken": token.accessToken,
+            "scopes": Array(token.scopes),
+        ]
+        if let rt = token.refreshToken { dict["refreshToken"] = rt }
+        if let ou = token.organizationUUID { dict["organizationUUID"] = ou }
+        if let on = token.organizationName { dict["organizationName"] = on }
+        if let au = token.accountUUID { dict["accountUUID"] = au }
+        if let em = token.email { dict["email"] = em }
+        if let rl = token.rateLimitTier { dict["rateLimitTier"] = rl }
+
+        let wrapper: [String: Any] = ["claudeAiOauth": dict]
+
+        guard let data = try? JSONSerialization.data(
+            withJSONObject: wrapper,
+            options: [.prettyPrinted, .sortedKeys]
+        ) else { return }
+
+        let dir = appCachePath.deletingLastPathComponent()
+        try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+        try? data.write(to: appCachePath, options: [.atomic, .completeFileProtection])
+    }
+
+    private static func readFromAppCache() throws -> OAuthToken {
+        let data = try Data(contentsOf: appCachePath)
+        return try parseCredentialData(data)
     }
 
     private static func readFromKeychain() throws -> OAuthToken {

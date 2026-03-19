@@ -33,7 +33,7 @@ enum TokenRefresher {
         let org = json["organization"] as? [String: Any]
         let account = json["account"] as? [String: Any]
 
-        return OAuthToken(
+        let token = OAuthToken(
             accessToken: accessToken,
             refreshToken: json["refresh_token"] as? String ?? refreshToken,
             scopes: scopes,
@@ -43,5 +43,10 @@ enum TokenRefresher {
             email: account?["email_address"] as? String,
             rateLimitTier: json["rate_limit_tier"] as? String
         )
+
+        // Persist refreshed token so we never need Keychain again
+        KeychainReader.persistToFile(token)
+
+        return token
     }
 }

@@ -46,19 +46,19 @@ make help            # Show all targets
 
 | File | Role |
 |------|------|
-| `AppState.swift` | Centralized state management (`@Observable` macro) |
+| `AppState.swift` | Centralized state management (`@Observable`), adaptive backoff on 429 |
 | `AppDelegate.swift` | Menu bar setup, NSStatusItem, icon rendering |
 | `AIUsageBarApp.swift` | `@main` entry point |
 | `UsageService.swift` | `UsageService` protocol (fetchUsage, isAvailable) |
 | `UsageServiceRouter.swift` | Routes to OAuth → CLI → Web with cascade fallback |
-| `OAuthUsageService.swift` | Anthropic OAuth API integration |
+| `OAuthUsageService.swift` | Anthropic OAuth API integration, 429 handling via token refresh |
 | `CLIUsageService.swift` | Claude CLI interactive `/status` fallback runner |
 | `WebUsageService.swift` | claude.ai web API via session cookies |
-| `KeychainReader.swift` | OAuth token reading from Keychain / ~/.claude/.credentials.json |
+| `KeychainReader.swift` | OAuth token reading: credentials file → app cache → Keychain (one-time prompt) |
 | `CookieExtractor.swift` | Chrome (AES-128 decryption) & Safari cookie extraction |
-| `TokenRefresher.swift` | OAuth token refresh logic |
+| `TokenRefresher.swift` | OAuth token refresh logic, persists refreshed tokens to app cache |
 | `UsageData.swift` | Data structures for usage windows (session, weekly, model-specific, cowork, oauth apps) |
-| `Settings.swift` | RefreshInterval, PreferredSource, DisplayMode enums |
+| `Settings.swift` | RefreshInterval, PreferredSource, CookieSource, UsageError enums |
 | `PlanInfo.swift` | Plan tier information |
 | `MenuBarIcon.swift` | Renders 18x18 icon with usage bars |
 | `UsagePanelView.swift` | Main popover UI with settings |
@@ -70,11 +70,13 @@ make help            # Show all targets
 
 - **No external dependencies** -- only system frameworks (SwiftUI, AppKit, Security, CommonCrypto, sqlite3)
 - **State pattern** -- single `AppState` with `@Observable` macro
-- **Authentication cascade** -- OAuth (Keychain) → Claude CLI → Web cookies (automatic fallback)
+- **Authentication cascade** -- OAuth (credentials file → app cache → Keychain) → Claude CLI → Web cookies
+- **Credential caching** -- after first Keychain read, credentials are persisted to `~/Library/Application Support/AIUsageBar/cached_credentials.json` so the Keychain password is never prompted again
+- **Rate limit handling** -- 429 from `/api/oauth/usage` triggers token refresh (resets per-token rate limit window), with exponential backoff in polling interval
 - **Menu bar** -- `NSStatusItem` with custom-rendered 18x18 icon
 - **Popover** -- `NSPopover` with SwiftUI content
 - **Concurrency** -- Swift 6 strict concurrency, `Sendable` types, async/await throughout
-- **Configuration** -- `UserDefaults` for refresh interval, display mode, preferred source
+- **Configuration** -- `UserDefaults` for refresh interval (5m/10m/15m/30m, default 5m), display mode, preferred source
 - **140-character line length limit**
 - **4-space indentation**
 - **Trailing commas enforced**
@@ -82,10 +84,12 @@ make help            # Show all targets
 ## OAuth Usage API
 
 The primary data source is `GET https://api.anthropic.com/api/oauth/usage` with headers:
-- `Authorization: Bearer <token>` (from Claude Code Keychain credentials)
+- `Authorization: Bearer <token>` (from Claude Code credentials)
 - `anthropic-beta: oauth-2025-04-20`
 
-Response format (as of March 2026):
+**Rate limiting**: The endpoint aggressively rate-limits (~5 requests per access token). On 429, the app refreshes the OAuth token to get a fresh rate limit window. If that also fails, it backs off exponentially (up to 1 hour).
+
+Response format:
 ```json
 {
   "five_hour": {"utilization": 40.0, "resets_at": "2026-03-06T02:00:00+00:00"},
@@ -101,7 +105,7 @@ Response format (as of March 2026):
 - `utilization` is 0-100 (percent), divide by 100 for display
 - All `seven_day_*` windows can be null
 - `extra_usage.monthly_limit` and `used_credits` are in cents
-- Credentials are stored in macOS Keychain under service `"Claude Code-credentials"` with a `claudeAiOauth` nested key
+- Credentials read order: `~/.claude/.credentials.json` → `~/Library/Application Support/AIUsageBar/cached_credentials.json` → macOS Keychain (`"Claude Code-credentials"` / `"claudeAiOauth"`)
 
 ## Platform
 
